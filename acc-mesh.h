@@ -1,5 +1,7 @@
 
 struct accmesh {
+	char *filename;
+	int option_verbose;
 
 	/* State information */
 	const char *progname;
@@ -7,3 +9,4 @@ struct accmesh {
 	int argc;
 	int return_value;
 };
+

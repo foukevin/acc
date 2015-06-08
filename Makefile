@@ -28,6 +28,7 @@ BASIC_LDFLAGS =
 PROGRAM_OBJS =
 PROGRAM =
 
+PROGRAM_OBJS += error.o
 PROGRAM_OBJS += mesh-obj-read.o
 PROGRAM_OBJS += mesh-write.o
 
