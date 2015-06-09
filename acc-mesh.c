@@ -1,3 +1,4 @@
+#include "mesh.h"
 #include "acc-mesh.h"
 #include "error.h"
 
@@ -6,6 +7,9 @@
 #include <stdlib.h> /* exit */
 #include <string.h> /* memset */
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static void usage(const struct accmesh *accmesh)
 {
@@ -49,7 +53,7 @@ void parse_options(struct accmesh *accmesh)
 			exit(1);
 	}
 
-	/* Handle non-option arguments (ie: font names) */
+	/* Handle non-option arguments (ie: input file names) */
 	if (optind < accmesh->argc) {
 		/*
 		 * Take the first positional argument, pending ones
@@ -88,8 +92,28 @@ int main(int argc, char **argv)
 
 	accmesh->argc = argc;
 	accmesh->argv = argv;
-
 	parse_options(accmesh);
 
+	/* memory map input file */
+	char *buffer;
+	struct stat s;
+	int fd = open(accmesh->filename , O_RDONLY);
+	if (fd < 0)
+		error("opening '%s'", accmesh->filename);
+	fstat(fd, &s);
+	/* PROT_READ disallows writing to buffer: will segv */
+  	buffer = mmap(0, s.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (buffer == MAP_FAILED) {
+		close(fd);
+		error("reading '%s'", accmesh->filename);
+	}
+
+	struct generic_mesh *mesh, mesh_storage;
+	mesh = &mesh_storage;
+	mesh_obj_read(mesh, buffer, s.st_size);
+	printf("vertex count: %d\n", mesh->numverts);
+
+	munmap(buffer, s.st_size);
+	close(fd);
 	return accmesh->return_value;
 }
