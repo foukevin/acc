@@ -1,6 +1,7 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include "acc-mesh.h"
 #include <stddef.h>
 
 typedef struct {
@@ -13,6 +14,10 @@ struct generic_mesh {
 	vec3 *normals;
 };
 
+/* import */
 int mesh_obj_read(struct generic_mesh *mesh, const char *obj, size_t size);
+
+/* export */
+int write_gl_mesh(struct accmesh *accmesh);
 
 #endif /* MESH_H */

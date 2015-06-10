@@ -30,7 +30,7 @@ PROGRAM =
 
 PROGRAM_OBJS += error.o
 PROGRAM_OBJS += mesh-obj-read.o
-PROGRAM_OBJS += mesh-write.o
+PROGRAM_OBJS += mesh-gl-write.o
 
 # Binary suffix, set to .exe for Windows builds
 X =

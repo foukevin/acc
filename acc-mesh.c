@@ -72,8 +72,45 @@ void parse_options(struct accmesh *accmesh)
 	}
 }
 
+struct filemap {
+	int fd;
+	void *buf;
+	size_t size;
+};
+
+/*
+ * mode 0 read, 1 write
+ */
+void mapfile(struct filemap *map, const char *filename, int mode)
+{
+	/* memory map input file */
+	char *buf;
+	struct stat s;
+	int fd = open(filename , mode ? O_WRONLY : O_RDONLY);
+	if (fd < 0)
+		error("opening '%s'", filename);
+	fstat(fd, &s);
+
+  	buf = mmap(0, s.st_size, mode ? PROT_WRITE : PROT_READ, MAP_PRIVATE, fd, 0);
+	if (buf == MAP_FAILED) {
+		close(fd);
+		error("mapping '%s'", filename);
+	}
+
+	map->fd = fd;
+	map->buf = buf;
+	map->size = s.st_size;
+}
+
+void unmapfile(struct filemap *map)
+{
+	munmap(map->buf, map->size);
+	close(map->fd);
+}
+
 int main(int argc, char **argv)
 {
+	struct generic_mesh mesh_storage;
 	struct accmesh *accmesh, accmesh_storage;
 
 	accmesh = &accmesh_storage;
@@ -84,36 +121,19 @@ int main(int argc, char **argv)
 	accmesh = &accmesh_storage;
 	memset(accmesh, 0, sizeof(*accmesh));
 
-	if (*argv == NULL) {
-		accmesh->progname = "accmesh";
-	} else {
-		accmesh->progname = *argv;
-	}
-
+	accmesh->progname = (*argv != NULL) ? *argv : "accmesh";
 	accmesh->argc = argc;
 	accmesh->argv = argv;
+	accmesh->mesh = &mesh_storage;
 	parse_options(accmesh);
 
-	/* memory map input file */
-	char *buffer;
-	struct stat s;
-	int fd = open(accmesh->filename , O_RDONLY);
-	if (fd < 0)
-		error("opening '%s'", accmesh->filename);
-	fstat(fd, &s);
-	/* PROT_READ disallows writing to buffer: will segv */
-  	buffer = mmap(0, s.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (buffer == MAP_FAILED) {
-		close(fd);
-		error("reading '%s'", accmesh->filename);
-	}
+	struct filemap map;
+	mapfile(&map, accmesh->filename, 0);
+	mesh_obj_read(accmesh->mesh, map.buf, map.size);
+	unmapfile(&map);
 
-	struct generic_mesh *mesh, mesh_storage;
-	mesh = &mesh_storage;
-	mesh_obj_read(mesh, buffer, s.st_size);
-	printf("vertex count: %d\n", mesh->numverts);
+	accmesh->meshname = "/tmp/untitled.bin";
+	write_gl_mesh(accmesh);
 
-	munmap(buffer, s.st_size);
-	close(fd);
 	return accmesh->return_value;
 }
