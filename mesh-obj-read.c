@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "mapfile.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -130,15 +131,24 @@ static int parse_line(const char *linep, size_t linelen,
 	return 0;
 }
 
-int mesh_obj_read(struct generic_mesh *mesh, const char *buf, size_t buflen)
+int mesh_obj_read(struct accmesh *accmesh)
 {
+	struct filemap map;
+	const char *buf;
+	size_t buflen;
 	char *linep = NULL;
 	size_t linecap = 256;
 	int linelen;
+	struct generic_mesh *mesh;
 
-	if (mesh == NULL)
+	if (accmesh == NULL)
 		return 1;
 
+	mesh = accmesh->mesh;
+	mapfile(&map, accmesh->filename, 0);
+
+	buf = map.buf;
+	buflen = map.size;
 	linep = malloc(linecap);
 
 	while ((linelen = amemgetline(&linep, &linecap, buf, buflen)) != -1) {
@@ -150,5 +160,6 @@ int mesh_obj_read(struct generic_mesh *mesh, const char *buf, size_t buflen)
 	}
 
 	free(linep);
+	unmapfile(&map);
 	return 0;
 }

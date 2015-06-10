@@ -15,7 +15,7 @@ struct generic_mesh {
 };
 
 /* import */
-int mesh_obj_read(struct generic_mesh *mesh, const char *obj, size_t size);
+int mesh_obj_read(struct accmesh *accmesh);
 
 /* export */
 int write_gl_mesh(struct accmesh *accmesh);

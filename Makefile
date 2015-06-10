@@ -29,6 +29,7 @@ PROGRAM_OBJS =
 PROGRAM =
 
 PROGRAM_OBJS += error.o
+PROGRAM_OBJS += mapfile.o
 PROGRAM_OBJS += mesh-obj-read.o
 PROGRAM_OBJS += mesh-gl-write.o
 

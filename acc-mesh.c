@@ -7,10 +7,6 @@
 #include <stdlib.h> /* exit */
 #include <string.h> /* memset */
 
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 static void usage(const struct accmesh *accmesh)
 {
 	fprintf(stderr, "Usage: %s [options] mesh\n", accmesh->progname);
@@ -27,7 +23,7 @@ static struct option long_options[] = {
 
 static int accmesh_getopt(struct accmesh *accmesh)
 {
-	return getopt_long(accmesh->argc, accmesh->argv, "hv", long_options, NULL);
+	return getopt_long(accmesh->argc, accmesh->argv, "hvo:", long_options, NULL);
 }
 
 void parse_options(struct accmesh *accmesh)
@@ -42,6 +38,9 @@ void parse_options(struct accmesh *accmesh)
 			break;
 		case 'v':
 			accmesh->option_verbose = 1;
+			break;
+		case 'o':
+			accmesh->meshname = strdup(optarg);
 			break;
 		case '?':
 		default:
@@ -67,45 +66,15 @@ void parse_options(struct accmesh *accmesh)
 		exit(1);
 	}
 
+	if (!accmesh->meshname) {
+		error("no output file");
+		exit(1);
+	}
+
 	if (accmesh->option_verbose) {
 		printf("input file: %s\n", accmesh->filename);
+		printf("output file: %s\n", accmesh->meshname);
 	}
-}
-
-struct filemap {
-	int fd;
-	void *buf;
-	size_t size;
-};
-
-/*
- * mode 0 read, 1 write
- */
-void mapfile(struct filemap *map, const char *filename, int mode)
-{
-	/* memory map input file */
-	char *buf;
-	struct stat s;
-	int fd = open(filename , mode ? O_WRONLY : O_RDONLY);
-	if (fd < 0)
-		error("opening '%s'", filename);
-	fstat(fd, &s);
-
-  	buf = mmap(0, s.st_size, mode ? PROT_WRITE : PROT_READ, MAP_PRIVATE, fd, 0);
-	if (buf == MAP_FAILED) {
-		close(fd);
-		error("mapping '%s'", filename);
-	}
-
-	map->fd = fd;
-	map->buf = buf;
-	map->size = s.st_size;
-}
-
-void unmapfile(struct filemap *map)
-{
-	munmap(map->buf, map->size);
-	close(map->fd);
 }
 
 int main(int argc, char **argv)
@@ -127,12 +96,7 @@ int main(int argc, char **argv)
 	accmesh->mesh = &mesh_storage;
 	parse_options(accmesh);
 
-	struct filemap map;
-	mapfile(&map, accmesh->filename, 0);
-	mesh_obj_read(accmesh->mesh, map.buf, map.size);
-	unmapfile(&map);
-
-	accmesh->meshname = "/tmp/untitled.bin";
+	mesh_obj_read(accmesh);
 	write_gl_mesh(accmesh);
 
 	return accmesh->return_value;
