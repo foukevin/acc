@@ -14,12 +14,22 @@ void mapfile(struct filemap *map, const char *filename, int mode)
 	/* memory map input file */
 	char *buf;
 	struct stat s;
-	int fd = open(filename , mode ? O_WRONLY : O_RDONLY);
+	int fd;
+
+	if (mode)
+		fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
+	else
+		fd = open(filename, O_RDONLY);
+
 	if (fd < 0)
 		error("opening '%s'", filename);
 	fstat(fd, &s);
 
-  	buf = mmap(0, s.st_size, mode ? PROT_WRITE : PROT_READ, MAP_PRIVATE, fd, 0);
+	size_t size = mode ? 1024 * 1024 : s.st_size; /* 1Mb max */
+	int prot = mode ? PROT_WRITE : PROT_READ;
+	int flags = mode ? MAP_SHARED : MAP_PRIVATE;
+
+  	buf = mmap(0, size, prot, flags, fd, 0);
 	if (buf == MAP_FAILED) {
 		close(fd);
 		error("mapping '%s'", filename);
@@ -27,7 +37,7 @@ void mapfile(struct filemap *map, const char *filename, int mode)
 
 	map->fd = fd;
 	map->buf = buf;
-	map->size = s.st_size;
+	map->size = size;
 }
 
 void unmapfile(struct filemap *map)
