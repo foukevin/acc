@@ -16,10 +16,12 @@ void mapfile(struct filemap *map, const char *filename, int mode)
 	struct stat s;
 	int fd;
 
-	if (mode)
+	if (mode) {
 		fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
-	else
+		ftruncate(fd, 1024 * 1024);
+	} else {
 		fd = open(filename, O_RDONLY);
+	}
 
 	if (fd < 0)
 		error("opening '%s'", filename);
@@ -40,8 +42,10 @@ void mapfile(struct filemap *map, const char *filename, int mode)
 	map->size = size;
 }
 
-void unmapfile(struct filemap *map)
+void unmapfile(struct filemap *map, size_t size)
 {
+	if (map->mode)
+		ftruncate(map->fd, size);
 	munmap(map->buf, map->size);
 	close(map->fd);
 }

@@ -81,6 +81,7 @@ ssize_t get_token(char *tokenp, size_t cap, const char *buf, size_t buflen)
 
 enum obj_token_type {
 	OT_COMMENT,
+	OT_OBJECT,
 	OT_VERTEX,
 	OT_VERTEX_NORMAL,
 	OT_FACE,
@@ -92,68 +93,89 @@ struct obj_token {
 	enum obj_token_type name;
 } static const tokens[] = {
 	{ "#", OT_COMMENT },
+	{ "o", OT_OBJECT },
 	{ "v", OT_VERTEX },
 	{ "vn", OT_VERTEX_NORMAL },
 	{ "f", OT_FACE },
 	{ NULL, OT_UNKNOWN },
 };
 
-double *mesh_get_vertex(struct generic_mesh *mesh)
-{
-	return &mesh->vertices[mesh->numverts++];
-}
-
 static int parse_line(const char *linep, size_t linelen,
 		      struct generic_mesh *mesh)
 {
 	int i;
-	const struct obj_token *tokp;
-	char token[256];
-	size_t tokenlen = get_token(token, 256, linep, linelen);
+	//size_t tokenlen = get_token(token, 256, linep, linelen);
 	double *v;
-	printf("(%d) %s\n", tokenlen, token);
+	char *token, *string, *tofree;
 
-	char *tok, *string, *tofree;
+	tofree = string = strdup(linep);
+	assert(string != NULL);
 
-	for (tokp = tokens; tokp->name != OT_UNKNOWN; ++tokp) {
-		if (strcmp(tokp->string, token))
-			continue;
+	/* get identifier type */
+	enum obj_token_type type = OT_UNKNOWN;
+	{
+		const struct obj_token *tokp;
+		char *identifier = strsep(&string, " ");
+		if (identifier != NULL)
+			for (tokp = tokens; tokp->name != OT_UNKNOWN; ++tokp)
+				if (!strcmp(tokp->string, identifier))
+					type = tokp->name;
+		printf("id: %s, type: %d ", identifier, type);
+	}
 
-		tofree = string = strdup(linep);
-		assert(string != NULL);
+	char *face;
+	int fverts = 0;
 
-		switch (tokp->name) {
-		case OT_COMMENT:
-			puts("comment");
-			break;
-		case OT_VERTEX:
-			puts("vertex");
-			string = linep + 2;
-			v = mesh_get_vertex(mesh);
-			for (i = 0; i < 3; ++i)
-				v[i] = atof(strsep(&string, " "));
-			break;
-		case OT_VERTEX_NORMAL:
-			puts("vertex normal");
-			break;
-		case OT_FACE:
-			puts("face");
+	switch (type) {
+	case OT_COMMENT:
+		puts("comment");
+		break;
+	case OT_VERTEX:
+		puts("vertex");
+		v = mesh_get_vertex(mesh);
+		for (i = 0; i < 3; ++i) {
+			token = strsep(&string, " ");
+			assert(token != NULL);
+			v[i] = atof(token);
+		}
+		break;
+	case OT_VERTEX_NORMAL:
+		puts("vertex normal");
+		break;
+	case OT_FACE:
+		puts("face");
+		fverts = 0;
+		while ((face = strsep(&string, " "))) {
+			token = strsep(&face, "/");
+			int vert = (*token == '\0') ? -1 : atoi(token);
+			token = strsep(&face, "/");
+			int texco = (*token == '\0') ? -1 : atoi(token);
+			token = strsep(&face, "/");
+			int norm = (*token == '\0') ? -1 : atoi(token);
+			printf("vert: %d, texco:%d, norm: %d\n", vert, texco, norm);
+			fverts++;
+		}
+
+		switch (fverts) {
+		case 4:
+
+			/* fallthrought */
+			puts("2nd tri");
+		case 3:
+			puts("1st tri");
 			break;
 		default:
-			puts("not parsed yet");
 			break;
 		}
-		free(tofree);
+		break;
+	default:
+		puts("not parsed yet");
+		break;
 	}
+	free(tofree);
 	return 0;
 }
 
-/* TODO: move function out of this unit */
-void mesh_init(struct generic_mesh *mesh)
-{
-	mesh->numverts = 0;
-	mesh->vertices = malloc(sizeof(vec3) * 32768);
-}
 
 int mesh_obj_read(struct accmesh *accmesh)
 {
@@ -185,6 +207,6 @@ int mesh_obj_read(struct accmesh *accmesh)
 	}
 
 	free(linep);
-	unmapfile(&map);
+	unmapfile(&map, 0);
 	return 0;
 }
