@@ -28,6 +28,7 @@ BASIC_LDFLAGS =
 PROGRAM_OBJS =
 PROGRAM =
 
+PROGRAM_OBJS += array.o
 PROGRAM_OBJS += error.o
 PROGRAM_OBJS += mapfile.o
 PROGRAM_OBJS += mesh.o

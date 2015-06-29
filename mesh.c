@@ -2,19 +2,20 @@
 
 void mesh_init(struct generic_mesh *mesh)
 {
-	mesh->numverts = 0;
-	mesh->vertices = malloc(sizeof(vec3) * 32768);
-	mesh->numtris = 0;
-	mesh->triangles = malloc(sizeof(struct triangle) * 32768);
+	mesh->verts = new_array(8192, sizeof(vec3));
+	mesh->texcos = new_array(8192, sizeof(vec3));
+	mesh->norms = new_array(8192, sizeof(vec3));
+	mesh->polys = new_array(4096, sizeof(struct polygon));
 }
 
-double *mesh_get_vertex(struct generic_mesh *mesh)
+struct triangle_mesh *mesh_to_triangle_mesh(const struct generic_mesh *mesh)
 {
-	return &mesh->vertices[mesh->numverts++];
-}
+	struct triangle_mesh *new_trimesh = malloc(sizeof(*new_trimesh));
 
-struct triangle *mesh_get_triangle(struct generic_mesh *mesh)
-{
-	return &mesh->triangles[mesh->numtris++];
+	int i;
+	for (i = 0; i < mesh->polys->size; ++i) {
+		const struct polygon *poly = array_get(mesh->polys, i);
+		printf("Polygon size: %d\n", poly->verts->size);
+	}
 }
 

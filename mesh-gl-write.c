@@ -32,6 +32,7 @@ int write_gl_mesh(struct accmesh *accmesh)
 	struct glhdr *hdr;
 
 	mesh = accmesh->mesh;
+	struct triangle_mesh *trimesh = mesh_to_triangle_mesh(mesh);
 
 	mapfile(&map, accmesh->meshname, 1);
 	char *const sof = map.buf; /* start of file */
@@ -42,23 +43,23 @@ int write_gl_mesh(struct accmesh *accmesh)
 	memset(hdr, 0, sizeof(*hdr));
 	eof += sizeof(*hdr);
 
-	/* vertices */
+	/* vertices with array */
 	{
 		int i;
 
 		/* append data after header */
 		char *const data = eof;
 		float *dst = (float *)data;
-		for (i = 0; i < mesh->numverts; ++i) {
-			const vec3 *v = &mesh->vertices[i];
-			dst[0] = (float)(*v[0]);
-			dst[1] = (float)(*v[1]);
-			dst[2] = (float)(*v[2]);
+		for (i = 0; i < mesh->verts->size; ++i) {
+			const vec3 *v = array_get(mesh->verts, i);
+			dst[0] = (float)((*v)[0]);
+			dst[1] = (float)((*v)[1]);
+			dst[2] = (float)((*v)[2]);
 			dst += 3;
 		}
 		eof = (char *)dst;
 
-		hdr->vcount = mesh->numverts;
+		hdr->vcount = mesh->verts->size;
 		hdr->vdata_off = data - sof;
 		hdr->vdata_sz = eof - data;
 	}

@@ -105,7 +105,7 @@ static int parse_line(const char *linep, size_t linelen,
 {
 	int i;
 	//size_t tokenlen = get_token(token, 256, linep, linelen);
-	double *v;
+	vec3 v;
 	char *token, *string, *tofree;
 
 	tofree = string = strdup(linep);
@@ -124,7 +124,6 @@ static int parse_line(const char *linep, size_t linelen,
 	}
 
 	char *face;
-	int fverts = 0;
 
 	switch (type) {
 	case OT_COMMENT:
@@ -132,40 +131,44 @@ static int parse_line(const char *linep, size_t linelen,
 		break;
 	case OT_VERTEX:
 		puts("vertex");
-		v = mesh_get_vertex(mesh);
 		for (i = 0; i < 3; ++i) {
 			token = strsep(&string, " ");
 			assert(token != NULL);
 			v[i] = atof(token);
 		}
+		array_append(mesh->verts, &v);
 		break;
 	case OT_VERTEX_NORMAL:
 		puts("vertex normal");
+		for (i = 0; i < 3; ++i) {
+			token = strsep(&string, " ");
+			assert(token != NULL);
+			v[i] = atof(token);
+		}
+		array_append(mesh->norms, &v);
 		break;
 	case OT_FACE:
-		puts("face");
-		fverts = 0;
-		while ((face = strsep(&string, " "))) {
-			token = strsep(&face, "/");
-			int vert = (*token == '\0') ? -1 : atoi(token);
-			token = strsep(&face, "/");
-			int texco = (*token == '\0') ? -1 : atoi(token);
-			token = strsep(&face, "/");
-			int norm = (*token == '\0') ? -1 : atoi(token);
-			printf("vert: %d, texco:%d, norm: %d\n", vert, texco, norm);
-			fverts++;
-		}
+		{
+			puts("face");
+			struct polygon p;
+			p.verts = new_array(4, sizeof(struct vertex));
 
-		switch (fverts) {
-		case 4:
+			while ((face = strsep(&string, " "))) {
+				struct vertex v;
 
-			/* fallthrought */
-			puts("2nd tri");
-		case 3:
-			puts("1st tri");
-			break;
-		default:
-			break;
+				token = strsep(&face, "/");
+				v.pos_index = ((*token == '\0') ? 0 : atoi(token)) - 1;
+				token = strsep(&face, "/");
+				v.texco_index = ((*token == '\0') ? 0 : atoi(token)) - 1;
+				token = strsep(&face, "/");
+				v.norm_index = ((*token == '\0') ? 0 : atoi(token)) - 1;
+
+				printf("vert: %d, texco:%d, norm: %d\n",
+				       v.pos_index, v.texco_index, v.norm_index);
+
+				array_append(p.verts, &v);
+			}
+			array_append(mesh->polys, &p);
 		}
 		break;
 	default:
