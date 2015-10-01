@@ -40,7 +40,7 @@ void parse_options(struct accmesh *accmesh)
 			accmesh->option_verbose = 1;
 			break;
 		case 'o':
-			accmesh->meshname = strdup(optarg);
+			accmesh->out_filename = strdup(optarg);
 			break;
 		case '?':
 		default:
@@ -66,14 +66,14 @@ void parse_options(struct accmesh *accmesh)
 		exit(1);
 	}
 
-	if (!accmesh->meshname) {
+	if (!accmesh->out_filename) {
 		error("no output file");
 		exit(1);
 	}
 
 	if (accmesh->option_verbose) {
 		printf("input file: %s\n", accmesh->filename);
-		printf("output file: %s\n", accmesh->meshname);
+		printf("output file: %s\n", accmesh->out_filename);
 	}
 }
 
@@ -81,9 +81,6 @@ int main(int argc, char **argv)
 {
 	struct generic_mesh mesh_storage;
 	struct accmesh *accmesh, accmesh_storage;
-
-	accmesh = &accmesh_storage;
-	memset(accmesh, 0, sizeof(*accmesh));
 
 	ERROR_INIT;
 

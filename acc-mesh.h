@@ -3,7 +3,7 @@
 
 struct accmesh {
 	char *filename;
-	char *meshname; /* output file name */
+	char *out_filename; /* output file name */
 	int option_verbose;
 
 	struct generic_mesh *mesh;

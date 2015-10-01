@@ -34,7 +34,7 @@ int write_gl_mesh(struct accmesh *accmesh)
 	mesh = accmesh->mesh;
 	struct triangle_mesh *trimesh = mesh_to_triangle_mesh(mesh);
 
-	mapfile(&map, accmesh->meshname, 1);
+	mapfile(&map, accmesh->out_filename, 1);
 	char *const sof = map.buf; /* start of file */
 	char *eof = sof;
 

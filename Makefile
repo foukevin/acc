@@ -26,21 +26,31 @@ BASIC_LDFLAGS =
 
 # Guard against environment variables
 PROGRAM_OBJS =
-PROGRAM =
+MESH_PROGRAM =
+MESH_OBJS =
+SHADER_PROGRAM =
+SHADER_OBJS =
 
 PROGRAM_OBJS += array.o
 PROGRAM_OBJS += error.o
+PROGRAM_OBJS += hash.o
+PROGRAM_OBJS += parse.o
 PROGRAM_OBJS += mapfile.o
-PROGRAM_OBJS += mesh.o
-PROGRAM_OBJS += mesh-obj-read.o
-PROGRAM_OBJS += mesh-gl-write.o
+MESH_OBJS += mesh.o
+MESH_OBJS += mesh-obj-read.o
+MESH_OBJS += mesh-gl-write.o
+SHADER_OBJS += shader.o
 
 # Binary suffix, set to .exe for Windows builds
 X =
 
-PROGRAM = acc-mesh$X
+MESH_PROGRAM = acc-mesh$X
+SHADER_PROGRAM = acc-shader$X
 
-OBJECTS = $(PROGRAM_OBJS) acc-mesh.o
+MESH_OBJECTS = $(MESH_OBJS) $(PROGRAM_OBJS) acc-mesh.o
+SHADER_OBJECTS = $(SHADER_OBJS) $(PROGRAM_OBJS) acc-shader.o
+
+OBJECTS = $(MESH_OBJECTS) $(SHADER_OBJECTS)
 
 # Libraries
 
@@ -65,15 +75,21 @@ clean:
 
 .PHONY: all strip
 
-all:: $(PROGRAM)
+all:: $(MESH_PROGRAM) $(SHADER_PROGRAM)
 
-strip: $(PROGRAM)
+strip: $(MESH_PROGRAM)
 	$(STRIP) $(STRIP_OPTS) $^
 
 .SUFFIXES:
 
-$(OBJECTS): %.o: %.c
+$(MESH_OBJECTS): %.o: %.c
 	$(CC) -o $*.o -c $(ALL_CFLAGS) $(EXTRA_CPPFLAGS) $<
 
-$(PROGRAM): $(OBJECTS)
-	$(CC) -o $@ $(OBJECTS) $(ALL_LDFLAGS) $(LIBS)
+$(MESH_PROGRAM): $(MESH_OBJECTS)
+	$(CC) -o $@ $(MESH_OBJECTS) $(ALL_LDFLAGS) $(LIBS)
+
+$(SHADER_OBJECTS): %.o: %.c
+	$(CC) -o $*.o -c $(ALL_CFLAGS) $(EXTRA_CPPFLAGS) $<
+
+$(SHADER_PROGRAM): $(SHADER_OBJECTS)
+	$(CC) -o $@ $(SHADER_OBJECTS) $(ALL_LDFLAGS) $(LIBS)

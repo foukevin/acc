@@ -1,11 +1,11 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-void error(const char *err, ...);
-void warning(const char *err, ...);
-void die(const char *err, ...);
+void error(const char *, ...);
+void warning(const char *, ...);
+void die(const char *, ...);
 
-void setprogname(const char *progname);
+void setprogname(const char *);
 #define ERROR_INIT \
 	do { \
 		if (argv[0] != NULL) \
